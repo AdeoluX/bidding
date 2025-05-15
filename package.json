@@ -1,5 +1,5 @@
 {
-  "name": "invoice-generator-api",
+  "name": "bidding-api",
   "version": "1.0.0",
   "description": "Helps businesses generate invoices and receive payments",
   "main": "start.js",
@@ -36,6 +36,8 @@
     "mongoose": "^8.13.2",
     "paystack": "^2.0.1",
     "pdfkit": "^0.16.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

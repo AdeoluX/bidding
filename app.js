@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const app = express();
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./src/config/swagger.config');
 
 const ApiError = require('./src/utils/ApiError');
 const httpStatus = require('http-status');
@@ -25,6 +27,9 @@ app.use(fileUpload({
 app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/', (req, res) => {
   res.send('Server is up and running!');
