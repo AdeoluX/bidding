@@ -41,9 +41,28 @@ var itemSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'closed', 'cancelled'],
-    default: 'active'
-  }
+    enum: ['draft', 'active', 'closed', 'cancelled'],
+    default: 'draft'
+  },
+  version: {
+    type: Number,
+    default: 1
+  },
+  tags: [{
+    type: String,
+    trim: true,
+    lowercase: true
+  }],
+  images: [{
+    url: {
+      type: String,
+      required: true
+    },
+    publicId: {
+      type: String,
+      required: true
+    }
+  }]
 }, {
   timestamps: true
 });
@@ -57,6 +76,9 @@ itemSchema.virtual('bids', {
 
 // Index for performance
 itemSchema.index({ seller: 1, status: 1, endTime: 1, code: 1 });
+itemSchema.index({ tags: 1 });
+itemSchema.index({ currentPrice: 1 });
+itemSchema.index({ version: 1 }); // Index for optimistic locking
 
 var Item = mongoose.model('Item', itemSchema);
 

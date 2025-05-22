@@ -7,10 +7,19 @@ const swaggerSpec = require('./src/config/swagger.config');
 const ApiError = require('./src/utils/ApiError');
 const httpStatus = require('http-status');
 const cors = require('cors');
-const { authRoute, utilsRoute, webHookRoute } = require('./src/routes');
+const helmet = require('helmet');
+const compression = require('compression');
+const { authRoute, utilsRoute, webHookRoute, itemRoute, bidRoute } = require('./src/routes');
 const { errorConverter, errorHandler } = require('./src/middleware/error');
 const fileUpload = require("express-fileupload");
+const { SocketService } = require('./src/services/socket.service');
+
 const dbConnect = require('./src/config/db.config');
+const server = require('http').createServer(app);
+const io = SocketService.initialize(server);
+
+// Make io available to routes
+app.set('io', io);
 
 const corsOptions = {
   origin: '*', // Update this for production
@@ -20,11 +29,15 @@ const corsOptions = {
 
 app.use(fileUpload({
   useTempFiles : true,
-  tempFileDir : '/tmp/'
+  tempFileDir : '/tmp/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max file size
+  abortOnLimit: true
 }));
 
 // Middleware
 app.use(cors(corsOptions));
+app.use(helmet());
+app.use(compression());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -39,6 +52,8 @@ app.get('/', (req, res) => {
 app.use('/api/v1', authRoute);
 app.use('/api/v1', utilsRoute);
 app.use('/api/v1', webHookRoute);
+app.use('/api/v1/items', itemRoute);
+app.use('/api/v1/bids', bidRoute);
 
 // Catch-all for 404 errors
 app.use((req, res, next) => {
@@ -50,21 +65,13 @@ app.use((req, res, next) => {
 app.use(errorConverter);
 app.use(errorHandler);
 
-// Start the server after connecting to the database
-const startServer = async () => {
-  try {
-    dbConnect;
-    console.log('Database connected successfully');
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error('Failed to connect to database:', error.message);
-    process.exit(1);
-  }
-};
+// Connect to database
+dbConnect.then(() => {
+  console.log('Database connected successfully');
+}).catch((error) => {
+  console.error('Failed to connect to database:', error.message);
+  process.exit(1);
+});
 
-startServer();
-
-module.exports = app;
+// Export server instead of app for WebSocket support
+module.exports = server;
